@@ -1,6 +1,8 @@
 import type { LegoSet } from './types';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const apiUrl = import.meta.env.VITE_API_URL;
+
+const API_BASE_URL = `${apiUrl}/api`;
 
 export const legoService = {
   // Get all LEGO sets
