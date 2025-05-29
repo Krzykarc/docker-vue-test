@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useCssModule } from 'vue';
-import { legoSets } from './data';
 import type { LegoSet } from './types';
+import { legoService } from './legoService';
 import LegoSetForm from './components/LegoSetForm.vue';
 import LegoSetCard from './components/LegoSetCard.vue';
 import LegoControls from './components/LegoControls.vue';
@@ -16,12 +16,27 @@ type ViewState =
   | { type: 'EDITING'; set: LegoSet };
 
 const state = ref<ViewState>({ type: 'VIEWING' });
-const sets = ref<LegoSet[]>(legoSets);
+const sets = ref<LegoSet[]>([]);
+const isLoading = ref(false);
+const error = ref<string | null>(null);
+
+// Load sets on component mount
+onMounted(async () => {
+  try {
+    isLoading.value = true;
+    sets.value = await legoService.getAllSets();
+  } catch (err) {
+    error.value = 'Failed to load LEGO sets';
+    console.error(err);
+  } finally {
+    isLoading.value = false;
+  }
+});
 
 // Search and filter state
 const searchQuery = ref('');
 const selectedTheme = ref<string>('all');
-const sortBy = ref<'name' | 'price' | 'pieces' | 'year'>('name');
+const sortBy = ref<'name' | 'price' | 'pieces' | 'releaseYear'>('name');
 const sortOrder = ref<'asc' | 'desc'>('asc');
 
 // Computed values
@@ -31,20 +46,21 @@ const sortOptions = [
   { value: 'name', label: 'Sort by Name' },
   { value: 'price', label: 'Sort by Price' },
   { value: 'pieces', label: 'Sort by Pieces' },
-  { value: 'year', label: 'Sort by Year' }
+  { value: 'releaseYear', label: 'Sort by Year' }
 ];
 
 const filteredSets = computed(() => {
   return sets.value
     .filter(set => {
       const matchesSearch = set.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-                          set.description.toLowerCase().includes(searchQuery.value.toLowerCase());
+                          set.setNumber.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+                          set.theme.toLowerCase().includes(searchQuery.value.toLowerCase());
       const matchesTheme = selectedTheme.value === 'all' || set.theme === selectedTheme.value;
       return matchesSearch && matchesTheme;
     })
     .sort((a, b) => {
       const modifier = sortOrder.value === 'asc' ? 1 : -1;
-      if (sortBy.value === 'price' || sortBy.value === 'pieces' || sortBy.value === 'year') {
+      if (sortBy.value === 'price' || sortBy.value === 'pieces' || sortBy.value === 'releaseYear') {
         return (a[sortBy.value] - b[sortBy.value]) * modifier;
       }
       return a.name.localeCompare(b.name) * modifier;
@@ -78,29 +94,35 @@ const handleEditSet = (set: LegoSet) => {
   transitions.toEditing(set);
 };
 
-const handleDeleteSet = (setId: number) => {
+const handleDeleteSet = async (setId: number) => {
   if (confirm('Are you sure you want to delete this set?')) {
-    sets.value = sets.value.filter(set => set.id !== setId);
+    try {
+      await legoService.deleteSet(setId);
+      sets.value = sets.value.filter(set => set.id !== setId);
+    } catch (err) {
+      error.value = 'Failed to delete LEGO set';
+      console.error(err);
+    }
   }
 };
 
-const handleSaveSet = (setData: Omit<LegoSet, 'id'>) => {
-  if (isEditing(state.value)) {
-    const editingSetId = state.value.set.id;
-    sets.value = sets.value.map(set => 
-      set.id === editingSetId
-        ? { ...setData, id: set.id }
-        : set
-    );
-  } else {
-    const newSet: LegoSet = {
-      ...setData,
-      id: Math.max(...sets.value.map(s => s.id), 0) + 1
-    };
-    sets.value = [...sets.value, newSet];
+const handleSaveSet = async (setData: Omit<LegoSet, 'id'>) => {
+  try {
+    if (isEditing(state.value)) {
+      const editingSetId = state.value.set.id;
+      const updatedSet = await legoService.updateSet(editingSetId, setData);
+      sets.value = sets.value.map(set => 
+        set.id === editingSetId ? updatedSet : set
+      );
+    } else {
+      const newSet = await legoService.createSet(setData);
+      sets.value = [...sets.value, newSet];
+    }
+    transitions.toViewing();
+  } catch (err) {
+    error.value = 'Failed to save LEGO set';
+    console.error(err);
   }
-  
-  transitions.toViewing();
 };
 
 const handleCancelForm = () => {
@@ -126,8 +148,16 @@ const editingSet = computed(() => isEditing(state.value) ? state.value.set : und
       />
     </header>
 
+    <div v-if="error" :class="styles.error">
+      {{ error }}
+    </div>
+
+    <div v-if="isLoading" :class="styles.loading">
+      Loading LEGO sets...
+    </div>
+
     <LegoSetForm
-      v-if="isFormVisible"
+      v-else-if="isFormVisible"
       :set="editingSet"
       :themes="themes.filter(t => t !== 'all')"
       @save="handleSaveSet"
@@ -184,5 +214,20 @@ const editingSet = computed(() => isEditing(state.value) ? state.value.set : und
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+.error {
+  color: var(--error-color, #dc2626);
+  text-align: center;
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  background-color: var(--error-bg-color, #fee2e2);
+  border-radius: var(--border-radius);
+}
+
+.loading {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--text-secondary-color);
 }
 </style> 

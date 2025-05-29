@@ -28,10 +28,9 @@ const emit = defineEmits<{
         <span :class="styles.setTheme">{{ set.theme }}</span>
         <span :class="styles.setPieces">{{ set.pieces.toLocaleString() }} pieces</span>
       </div>
-      <p :class="styles.setDescription">{{ set.description }}</p>
       <div :class="styles.setDetails">
         <span :class="styles.setPrice">${{ set.price.toFixed(2) }}</span>
-        <span :class="styles.setYear">{{ set.year }}</span>
+        <span :class="styles.setYear">{{ set.releaseYear }}</span>
       </div>
       <div :class="styles.setActions">
         <Button

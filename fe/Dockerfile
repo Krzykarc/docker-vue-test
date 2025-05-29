@@ -1,4 +1,4 @@
-FROM node:24 as dev
+FROM node:24 AS dev
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
@@ -6,14 +6,14 @@ COPY . .
 EXPOSE 5173
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 
-FROM node:24-alpine as build
+FROM node:24-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
 RUN npm run build
 
-FROM nginx:1.27.5-alpine as prod
+FROM nginx:1.27.5-alpine AS prod
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

@@ -1,10 +1,13 @@
 export interface LegoSet {
   id: number;
+  setNumber: string;
   name: string;
-  description: string;
   pieces: number;
   price: number;
-  year: number;
+  ageRange: string;
   theme: string;
-  imageUrl?: string;
+  releaseYear: number;
+  imageUrl: string;
+  createdAt: Date;
+  updatedAt: Date;
 } 

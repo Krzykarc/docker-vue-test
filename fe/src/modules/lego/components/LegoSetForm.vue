@@ -16,7 +16,7 @@ const emit = defineEmits<{
   (e: 'cancel'): void;
 }>();
 
-const { formState, isFormValid, getFormData } = useLegoSetForm(props.set, props.themes);
+const { formData, isFormValid, getFormData } = useLegoSetForm(props.set, props.themes);
 const currentYear = new Date().getFullYear();
 
 const handleSubmit = () => {
@@ -31,7 +31,7 @@ const handleSubmit = () => {
     
     <div :class="styles.formGroup">
       <Input
-        v-model="formState.name"
+        v-model="formData.name"
         label="Set Name"
         placeholder="Enter set name"
         required
@@ -40,16 +40,16 @@ const handleSubmit = () => {
 
     <div :class="styles.formGroup">
       <Input
-        v-model="formState.description"
-        label="Description"
-        placeholder="Enter set description"
+        v-model="formData.setNumber"
+        label="Set Number"
+        placeholder="Enter set number"
         required
       />
     </div>
 
     <div :class="styles.formGroup">
       <Select
-        v-model="formState.theme"
+        v-model="formData.theme"
         :options="themes.map(t => ({ value: t, label: t }))"
         label="Theme"
         required
@@ -59,7 +59,7 @@ const handleSubmit = () => {
     <div :class="styles.formRow">
       <div :class="styles.formGroup">
         <Input
-          v-model="formState.pieces"
+          v-model="formData.pieces"
           label="Number of Pieces"
           type="number"
           :min="1"
@@ -69,7 +69,7 @@ const handleSubmit = () => {
 
       <div :class="styles.formGroup">
         <Input
-          v-model="formState.price"
+          v-model="formData.price"
           label="Price ($)"
           type="number"
           :min="0.01"
@@ -80,7 +80,7 @@ const handleSubmit = () => {
 
       <div :class="styles.formGroup">
         <Input
-          v-model="formState.year"
+          v-model="formData.releaseYear"
           label="Release Year"
           type="number"
           :min="1949"
@@ -92,7 +92,7 @@ const handleSubmit = () => {
 
     <div :class="styles.formGroup">
       <Input
-        v-model="formState.imageUrl"
+        v-model="formData.imageUrl"
         label="Image URL"
         placeholder="Enter image URL"
         required
@@ -105,7 +105,7 @@ const handleSubmit = () => {
         :disabled="!isFormValid"
         variant="primary"
       >
-        {{ formState.mode === 'edit' ? 'Save Changes' : 'Add Set' }}
+        {{ set ? 'Save Changes' : 'Add Set' }}
       </Button>
       <Button
         type="button"

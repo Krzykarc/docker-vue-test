@@ -1,61 +1,61 @@
 import { ref, computed } from 'vue';
 import type { LegoSet } from '../types';
 
-export interface LegoSetFormState {
-  name: string;
-  description: string;
-  theme: string;
-  pieces: string;
-  price: string;
-  year: string;
-  imageUrl: string;
-  mode: 'create' | 'edit';
-}
-
-export function useLegoSetForm(initialSet?: LegoSet, themes: string[] = []) {
-  const formState = ref<LegoSetFormState>({
+export const useLegoSetForm = (initialSet?: LegoSet, themes: string[] = []) => {
+  const formData = ref({
+    setNumber: initialSet?.setNumber || '',
     name: initialSet?.name || '',
-    description: initialSet?.description || '',
+    pieces: initialSet?.pieces?.toString() || '',
+    price: initialSet?.price?.toString() || '',
+    ageRange: initialSet?.ageRange || '',
     theme: initialSet?.theme || themes[0] || '',
-    pieces: initialSet?.pieces.toString() || '0',
-    price: initialSet?.price.toString() || '0',
-    year: initialSet?.year.toString() || new Date().getFullYear().toString(),
+    releaseYear: initialSet?.releaseYear?.toString() || new Date().getFullYear().toString(),
     imageUrl: initialSet?.imageUrl || '',
-    mode: initialSet ? 'edit' : 'create'
   });
 
   const isFormValid = computed(() => {
-    const { name, description, theme, pieces, price, year, imageUrl } = formState.value;
-    return name.trim() !== '' &&
-           description.trim() !== '' &&
-           theme !== '' &&
-           parseInt(pieces) > 0 &&
-           parseFloat(price) > 0 &&
-           parseInt(year) > 0 &&
-           imageUrl.trim() !== '';
+    return (
+      formData.value.setNumber.trim() !== '' &&
+      formData.value.name.trim() !== '' &&
+      formData.value.pieces.trim() !== '' &&
+      formData.value.price.trim() !== '' &&
+      formData.value.ageRange.trim() !== '' &&
+      formData.value.theme.trim() !== '' &&
+      formData.value.releaseYear.trim() !== '' &&
+      formData.value.imageUrl.trim() !== ''
+    );
   });
 
-  const submitButtonText = computed(() => 
-    initialSet ? 'Save Changes' : 'Add Set'
-  );
+  const getFormData = () => ({
+    setNumber: formData.value.setNumber,
+    name: formData.value.name,
+    pieces: parseInt(formData.value.pieces),
+    price: parseFloat(formData.value.price),
+    ageRange: formData.value.ageRange,
+    theme: formData.value.theme,
+    releaseYear: parseInt(formData.value.releaseYear),
+    imageUrl: formData.value.imageUrl,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  });
 
-  const getFormData = (): Omit<LegoSet, 'id'> => {
-    const { name, description, theme, pieces, price, year, imageUrl } = formState.value;
-    return {
-      name,
-      description,
-      theme,
-      pieces: parseInt(pieces),
-      price: parseFloat(price),
-      year: parseInt(year),
-      imageUrl
+  const resetForm = () => {
+    formData.value = {
+      setNumber: '',
+      name: '',
+      pieces: '',
+      price: '',
+      ageRange: '',
+      theme: '',
+      releaseYear: new Date().getFullYear().toString(),
+      imageUrl: '',
     };
   };
 
   return {
-    formState,
+    formData,
     isFormValid,
-    submitButtonText,
-    getFormData
+    getFormData,
+    resetForm,
   };
-} 
+}; 
