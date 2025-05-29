@@ -14,11 +14,35 @@ services:
       - CHOKIDAR_USEPOLLING=true
     profiles:
       - dev
+    depends_on:
+      - be-dev
   fe-prod:
     build:
       context: ./fe
       target: ${PROFILE:-prod}
     ports:
       - 80:80
+    profiles:
+      - prod
+
+  be-dev:
+    build:
+      context: ./be
+      target: ${PROFILE:-dev}
+    ports:
+      - 3000:3000
+    volumes:
+      - ./be/src:/app/src
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    profiles:
+      - dev
+  be-prod:
+    build:
+      context: ./be
+      target: ${PROFILE:-prod}
+    ports:
+      - 3000:3000
     profiles:
       - prod
